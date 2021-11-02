@@ -22,9 +22,10 @@ defmodule Formular.Client.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:websockex, "~> 0.4"},
+      {:phoenix_gen_socket_client, "~> 4.0"},
+      {:websocket_client, "~> 1.4"},
       {:jason, "~> 1.2"},
-      {:formular, "~> 0.3"}
+      {:formular, "~> 0.3.1-alpha.0"}
     ]
   end
 end

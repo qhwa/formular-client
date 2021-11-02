@@ -1,55 +1,115 @@
 defmodule Formular.Client.Websocket do
-  use WebSockex
+  alias Phoenix.Channels.GenSocketClient
+  alias Formular.Client.Config
+
+  @behaviour GenSocketClient
+  @reconnect_delay :timer.seconds(5)
+
   require Logger
+  defdelegate handle_new_code_revision(name, code, config), to: Formular.Client.Compiler
 
-  def start_link(url, opts) do
-    Logger.debug(["Starting new formula websocket client, ", url, ", ", opts[:name]])
+  def start_link(%Config{} = config) do
+    Logger.debug(["Starting new formula websocket client, ", inspect(config)])
 
-    url = url <> "?vsn=2.0.0"
-    WebSockex.start_link(url, __MODULE__, opts)
+    GenSocketClient.start_link(
+      __MODULE__,
+      Phoenix.Channels.GenSocketClient.Transport.WebSocketClient,
+      config
+    )
   end
 
   @impl true
-  def handle_connect(_conn, opts) do
-    Logger.debug(["Socket connected. ", opts[:name]])
-
-    client = self()
-    topic = "formula:#{opts[:name]}"
-
-    spawn_link(fn ->
-      :timer.sleep(1)
-
-      WebSockex.send_frame(
-        client,
-        {:text, ~s|["1", "1", "#{topic}", "phx_join", {}]|}
-      )
-    end)
-
-    {:ok, opts}
+  def init(%Config{} = config) do
+    {:connect, config.url, [], %{config: config}}
   end
 
   @impl true
-  def handle_frame({:text, msg}, opts) do
-    msg
-    |> Jason.decode!()
-    |> handle_data(opts)
+  def handle_connected(transport, state) do
+    Logger.debug("Formular client connected to the server.")
+    formulas = state.config.formulas || []
 
-    {:ok, opts}
+    case formulas do
+      [_ | _] ->
+        subscribe(formulas, transport, state)
+
+      [] ->
+        Logger.warn("Empty formula list.")
+        {:stop, :normal, state}
+    end
   end
 
-  def handle_frame(data, state) do
-    Logger.warn(["unprocessed data: ", inspect(data)])
+  @impl true
+  def handle_disconnected(reason, state) do
+    Logger.error(["Formular client disconnected, reason: ", inspect(reason)])
+    :timer.sleep(@reconnect_delay)
+    {:connect, state}
+  end
 
+  @impl true
+  def handle_reply(topic, _ref, payload, _transport, state) do
+    Logger.warn("reply on topic #{topic}: #{inspect(payload)}")
     {:ok, state}
   end
 
-  defp handle_data([_, _, _, "data", %{"code" => code}], opts) do
-    Logger.info(["Got data for formula #{opts[:name]}."])
+  @impl true
+  def handle_message(<<"formula:", name::binary>>, _, %{"code" => code}, _transport, state) do
+    Logger.debug(["Received new code form #{name}: ", inspect(code)])
 
-    opts[:handle_data].(code)
+    case handle_new_code_revision(name, code, state.config) do
+      :ok ->
+        {:ok, state}
+
+      {:error, reason} ->
+        {:stop, reason, state}
+    end
   end
 
-  defp handle_data(_data, _opts) do
-    :ok
+  def handle_message(topic, event, payload, _transport, state) do
+    Logger.warn("Unhandled message on topic #{topic}: #{event} #{inspect(payload)}")
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_joined(topic, _payload, _transport, state) do
+    Logger.info(["Formular client joined channel: ", topic])
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_join_error(topic, payload, _transport, state) do
+    Logger.error("Formular client join error on the topic #{topic}: #{inspect(payload)}")
+    {:stop, :error_joined, state}
+  end
+
+  @impl true
+  def handle_channel_closed(topic, payload, _transport, state) do
+    Logger.error("disconnected from the topic #{topic}: #{inspect(payload)}")
+    Process.send_after(self(), {:join, topic}, :timer.seconds(1))
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_info(_msg, _transport, state) do
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_call(message, _from, _transport, state) do
+    Logger.warn("Did not expect to receive call with message: #{inspect(message)}")
+    {:reply, {:error, :unexpected_message}, state}
+  end
+
+  defp subscribe([{_mod, name, _context} | rest], transport, state) do
+    topic = formula_topic(name)
+    {:ok, _ref} = GenSocketClient.join(transport, topic)
+    subscribe(rest, transport, state)
+  end
+
+  defp subscribe([], _transport, state) do
+    {:ok, state}
+  end
+
+  defp formula_topic(formula_name) do
+    "formula:#{formula_name}"
   end
 end
