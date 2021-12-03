@@ -30,8 +30,12 @@
       defp formular_client_config do
         url: "wss://example.com/socket/websocket",
         formulas: [
+          # key
+          "my-formula-1",
+          # {module, key}
+          {MyMod2, "my-formula-2"},
           # {module, key, context_module}
-          {BatchingFormular, "batching", nil}
+          {MyMod3, "my-formula-3", MyHelperModule}
         ]
       end
     end
@@ -42,8 +46,8 @@
 3. Use it in your code
 
     ```elixir
-    iex> BatchingFormular.run(store: %{id: "foo"})
-    false
+    iex> Formular.Client.eval("my-formula-name", store: %{id: "foo"})
+    {:ok, false}
     ```
 
 

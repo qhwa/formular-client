@@ -31,8 +31,14 @@ defmodule Formular.Client.Config do
     |> Map.update!(
       :formulas,
       &Enum.map(&1, fn
-        {_, _, _} = f -> f
-        {mod, name} -> {mod, name, nil}
+        name when is_binary(name) ->
+          {nil, name, nil}
+
+        {_, _, _} = f ->
+          f
+
+        {mod, name} ->
+          {mod, name, nil}
       end)
     )
   end

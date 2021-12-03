@@ -6,7 +6,6 @@ defmodule Formular.Client.Websocket do
   @reconnect_delay :timer.seconds(5)
 
   require Logger
-  defdelegate handle_new_code_revision(name, code, config), to: Formular.Client.Compiler
 
   def start_link(%Config{} = config) do
     Logger.debug(["Starting new formula websocket client, ", inspect(config)])
@@ -111,5 +110,18 @@ defmodule Formular.Client.Websocket do
 
   defp formula_topic(formula_name) do
     "formula:#{formula_name}"
+  end
+
+  def handle_new_code_revision(name, code, config) do
+    case Config.formula_config(config, name) do
+      {nil, ^name, _} ->
+        true = Formular.Client.Cache.put(name, code)
+        :ok
+
+      {mod, ^name, _} when is_atom(mod) ->
+        Formular.Client.Compiler.handle_new_code_revision(name, code, config)
+        true = Formular.Client.Cache.put(name, mod)
+        :ok
+    end
   end
 end
