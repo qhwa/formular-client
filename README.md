@@ -30,8 +30,8 @@
       defp formular_client_config do
         url: "wss://example.com/socket/websocket",
         formulas: [
-          # {key, module, context_module}
-          {"batching", BatchingFormular, nil}
+          # {module, key, context_module}
+          {BatchingFormular, "batching", nil}
         ]
       end
     end
