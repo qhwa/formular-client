@@ -10,12 +10,18 @@ defmodule Formular.Client.Config do
              :ok | {:error, term()})
 
   @type t :: %Config{
+          client_name: String.t(),
           url: String.t(),
           formulas: [formula_def()],
           compiler: {module(), atom(), args :: list()} | compile_function()
         }
 
-  defstruct [:url, :formulas, compiler: {Formular.Client.Compiler, :compile, []}]
+  defstruct [
+    :client_name,
+    :url,
+    :formulas,
+    compiler: {Formular.Client.Compiler, :compile, []}
+  ]
 
   @doc """
   Build a new config constructure.

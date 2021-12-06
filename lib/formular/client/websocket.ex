@@ -100,7 +100,7 @@ defmodule Formular.Client.Websocket do
 
   defp subscribe([{_mod, name, _context} | rest], transport, state) do
     topic = formula_topic(name)
-    {:ok, _ref} = GenSocketClient.join(transport, topic)
+    {:ok, _ref} = GenSocketClient.join(transport, topic, join_payload(state.config))
     subscribe(rest, transport, state)
   end
 
@@ -110,6 +110,10 @@ defmodule Formular.Client.Websocket do
 
   defp formula_topic(formula_name) do
     "formula:#{formula_name}"
+  end
+
+  defp join_payload(%{client_name: client_name}) do
+    %{client_name: client_name}
   end
 
   def handle_new_code_revision(name, code, config) do

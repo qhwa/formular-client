@@ -28,13 +28,14 @@
       end
 
       defp formular_client_config do
+        client_name: "myapp",
         url: "wss://example.com/socket/websocket",
         formulas: [
-          # key
+          # format 1: binary key
           "my-formula-1",
-          # {module, key}
+          # format 2: {module to compile, key}
           {MyMod2, "my-formula-2"},
-          # {module, key, context_module}
+          # format 3: {module, key, context_module}
           {MyMod3, "my-formula-3", MyHelperModule}
         ]
       end
