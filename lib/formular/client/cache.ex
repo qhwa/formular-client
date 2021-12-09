@@ -10,7 +10,7 @@ defmodule Formular.Client.Cache do
 
   @impl true
   def init(_) do
-    :ignore
+    {:ok, nil}
   end
 
   def put(name, code_or_module),

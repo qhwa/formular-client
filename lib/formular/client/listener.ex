@@ -15,13 +15,9 @@ defmodule Formular.Client.Listener do
 
   @impl true
   def init(config) do
-    {:ok, config, {:continue, :start_socket}}
-  end
-
-  @impl true
-  def handle_continue(:start_socket, config) do
-    start_socket(config)
-    {:noreply, config}
+    {:ok, _child} = start_socket(config)
+    wait_for_formulas(config)
+    {:ok, config}
   end
 
   defp start_socket(config) do
@@ -33,5 +29,19 @@ defmodule Formular.Client.Listener do
         restart: :permanent
       }
     )
+  end
+
+  defp wait_for_formulas(%{formulas: formulas} = config) do
+    all_loaded =
+      Enum.all?(formulas, fn {_, name, _} ->
+        Formular.Client.Cache.get(name)
+      end)
+
+    if all_loaded do
+      :ok
+    else
+      :timer.sleep(200)
+      wait_for_formulas(config)
+    end
   end
 end
