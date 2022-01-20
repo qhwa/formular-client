@@ -7,7 +7,7 @@ defmodule Formular.Client do
 
   @spec eval(
           name :: binary(),
-          binding :: Formular.binding(),
+          binding :: keyword(),
           options :: Formular.options()
         ) :: {:ok, term()} | {:error, term()}
 
