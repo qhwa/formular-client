@@ -4,7 +4,7 @@
 
 1. Install dependency
 
-    Add `{:formular_client, github: "zubale/formular-client"}` to `deps` section of `mix.exs`
+    Add `{:formular_client, "~> 0.1.0-alpha.1"}` to `deps` section of `mix.exs`
 
 2. Config client
 
