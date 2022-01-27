@@ -6,7 +6,7 @@ defmodule Formular.Client.Supervisor do
   use Supervisor
 
   def start_link(config) do
-    Supervisor.start_link(__MODULE__, config, name: __MODULE__)
+    Supervisor.start_link(__MODULE__, config)
   end
 
   @impl true
