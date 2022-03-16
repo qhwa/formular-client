@@ -13,14 +13,16 @@ defmodule Formular.Client.Config do
           client_name: String.t(),
           url: String.t(),
           formulas: [formula_def()],
-          compiler: {module(), atom(), args :: list()} | compile_function()
+          compiler: {module(), atom(), args :: list()} | compile_function(),
+          adapter: {module(), keyword()}
         }
 
   defstruct [
     :client_name,
     :url,
     :formulas,
-    compiler: {Formular.Client.Compiler, :compile, []}
+    compiler: {Formular.Client.Compiler, :compile, []},
+    adapter: {Formular.Client.Adapter.Websocket, []}
   ]
 
   @doc """
@@ -36,7 +38,7 @@ defmodule Formular.Client.Config do
     config
     |> Map.update!(
       :formulas,
-      &Enum.map(&1, fn
+      &Enum.map(&1 || [], fn
         name when is_binary(name) ->
           {nil, name, nil}
 

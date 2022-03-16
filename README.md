@@ -51,4 +51,29 @@
     {:ok, false}
     ```
 
+## Testing support
 
+You can use `Formular.Client.Adapter.Mock` for testing.
+
+```elixir
+config :formular_client, :adapter, {
+  Formular.Client.Adapter.Mock,
+  formulars: [
+    "my-formula-1", fn _binding, _opts -> :foo end
+  ]
+}
+```
+
+To change the return value for a formula dynamically, you can call `Formular.Client.Adapter.Mock.mock_global/2` as the following:
+
+```elixir
+defmodule MyTestCase do
+  import Formular.Client.Adapter.Mock
+
+  test "my test case" do
+    mock_global("my-formula-1", fn _binding, _opts -> :bar end)
+
+    # testing goes here...
+  end
+end
+```

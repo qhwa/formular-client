@@ -1,4 +1,4 @@
-defmodule Formular.Client.Websocket do
+defmodule Formular.Client.Adapter.Websocket do
   alias Phoenix.Channels.GenSocketClient
   alias Formular.Client.Config
 
@@ -7,7 +7,7 @@ defmodule Formular.Client.Websocket do
 
   require Logger
 
-  def start_link(%Config{} = config) do
+  def start_link(%Config{} = config, _options) do
     Logger.debug(["Starting new formula websocket client, ", inspect(config)])
 
     GenSocketClient.start_link(

@@ -5,7 +5,7 @@ defmodule Formular.Client.Application do
     children = [
       Formular.Client.Compiler,
       Formular.Client.Cache,
-      {DynamicSupervisor, name: Formular.Client.Sockets, strategy: :one_for_one}
+      {DynamicSupervisor, name: Formular.Client.Instances, strategy: :one_for_one}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_all)
