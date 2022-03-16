@@ -1,5 +1,4 @@
 defmodule Formular.Client.Listener do
-  alias Formular.Client.Websocket
   alias Formular.Client.Config
 
   use GenServer
@@ -15,20 +14,32 @@ defmodule Formular.Client.Listener do
 
   @impl true
   def init(config) do
-    {:ok, _child} = start_socket(config)
+    {:ok, _child} = start_adapter(config)
     wait_for_formulas(config)
     {:ok, config}
   end
 
-  defp start_socket(config) do
+  defp start_adapter(config) do
     DynamicSupervisor.start_child(
-      Formular.Client.Sockets,
+      Formular.Client.Instances,
       %{
         id: :erlang.unique_integer([:monotonic]),
-        start: {Websocket, :start_link, [config]},
+        start: adapter_start_tuple(config),
         restart: :permanent
       }
     )
+  end
+
+  defp adapter_start_tuple(config) do
+    case config.adapter do
+      {adapter, options} when is_atom(adapter) ->
+        {adapter, :start_link, [config, options]}
+
+      other ->
+        raise """
+        Invalid adapter configuration, expecting `{:some_adapter_module, options}, but got: #{inspect(other)}`.
+        """
+    end
   end
 
   defp wait_for_formulas(%{formulas: formulas} = config) do
