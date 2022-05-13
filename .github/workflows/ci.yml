@@ -1,0 +1,56 @@
+# Created with GitHubActions version 0.1.0
+name: CI
+on:
+  - push
+jobs:
+  linux:
+    name: Test on Ubuntu (Elixir ${{ matrix.elixir }}, OTP ${{ matrix.otp }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        elixir:
+          - '1.12.2'
+          - '1.13.1'
+        otp:
+          - '24.0'
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+      - name: Restore deps
+        uses: actions/cache@v2
+        with:
+          path: deps
+          key: deps-${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+      - name: Restore _build
+        uses: actions/cache@v2
+        with:
+          path: _build
+          key: _build-${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+      - name: Get dependencies
+        run: mix deps.get
+      - name: Compile dependencies
+        run: MIX_ENV=test mix deps.compile
+      - name: Compile project
+        run: MIX_ENV=test mix compile --warnings-as-errors
+      - name: Check code format
+        if: ${{ contains(matrix.elixir, '1.13.1') && contains(matrix.otp, '24.0') }}
+        run: MIX_ENV=test mix format --check-formatted
+      - name: Lint code
+        if: ${{ contains(matrix.elixir, '1.13.1') && contains(matrix.otp, '24.0') }}
+        run: MIX_ENV=test mix credo --strict
+      - name: Run tests with coverage
+        run: mix coveralls.json
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Static code analysis
+        run: mix dialyzer
