@@ -44,8 +44,7 @@ defmodule Formular.Client.Adapter.Mock do
         """
 
         Logger.error(msg)
-        # raise Formular.Client.MockError, {:missing, missing}
-        :ok
+        raise Formular.Client.MockError, {:missing, missing}
     end
   end
 
