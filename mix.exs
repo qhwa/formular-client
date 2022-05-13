@@ -17,6 +17,7 @@ defmodule Formular.Client.MixProject do
         "coveralls.detail": :test,
         "coveralls.json": :test,
         "coveralls.post": :test,
+        "coveralls.github": :test,
         "coveralls.html": :test
       ]
     ]
