@@ -27,19 +27,25 @@
         Supervisor.start_link(children, opts)
       end
 
-      defp formular_client_config do
-        client_name: "myapp",
-        url: "wss://example.com/socket/websocket",
-        formulas: [
-          # format 1: binary key
-          "my-formula-1",
-          # format 2: {module to compile, key}
-          {MyMod2, "my-formula-2"},
-          # format 3: {module, key, context_module}
-          {MyMod3, "my-formula-3", MyHelperModule}
-        ]
-      end
+      defp formular_client_config,
+        do: Application.get_env(:my_app, :formular_client)
     end
+    ```
+
+    ```elixir
+    # file: config/config.exs
+
+    config :my_app, :formular_client,
+      client_name: "myapp",
+      url: "wss://example.com/socket/websocket",
+      formulas: [
+        # format 1: binary key
+        "my-formula-1",
+        # format 2: {module to compile, key}
+        {MyMod2, "my-formula-2"},
+        # format 3: {module, key, context_module}
+        {MyMod3, "my-formula-3", MyHelperModule}
+      ]
     ```
 
     where `url` points to a formular server.
@@ -56,12 +62,14 @@
 You can use `Formular.Client.Adapter.Mock` for testing.
 
 ```elixir
-config :formular_client, :adapter, {
-  Formular.Client.Adapter.Mock,
-  formulars: [
-    {"my-formula-1", fn _binding, _opts -> :foo end}
-  ]
-}
+# file: config/test.exs
+config :my_app, :formular_client,
+  :adapter: {
+    Formular.Client.Adapter.Mock,
+    formulars: [
+      {"my-formula-1", fn _binding, _opts -> :foo end}
+    ]
+  }
 ```
 
 Optionally, to change the return value for a formula dynamically, you can call `Formular.Client.Adapter.Mock.mock_global/2` as the following:
