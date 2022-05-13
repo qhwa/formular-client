@@ -1,4 +1,8 @@
 defmodule Formular.Client.Compiler do
+  @moduledoc """
+  Compiler for making the string code into an Elixir module.
+  """
+
   require Logger
   alias Formular.Client.Config
 
@@ -10,9 +14,6 @@ defmodule Formular.Client.Compiler do
   def handle_new_code_revision(name, code, config) do
     with {mod, name, context} <- Config.formula_config(config, name) do
       case config do
-        %{compiler: {m, f}} ->
-          apply(m, f, [{code, name, mod, context}])
-
         %{compiler: {m, f, a}} ->
           apply(m, f, [{code, name, mod, context} | a])
 

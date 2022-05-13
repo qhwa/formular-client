@@ -1,4 +1,6 @@
 defmodule Formular.Client.Cache do
+  @moduledoc false
+
   use GenServer
 
   @ets_table :formular_client_cache

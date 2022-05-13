@@ -1,6 +1,13 @@
 defmodule Formular.Client.Adapter.Websocket do
-  alias Phoenix.Channels.GenSocketClient
+  @moduledoc """
+  The default adapter for maintaining a two-way connection between
+  the client and remote server, using WebSocket.
+  """
+
+  alias Formular.Client.Cache
+  alias Formular.Client.Compiler
   alias Formular.Client.Config
+  alias Phoenix.Channels.GenSocketClient
 
   @behaviour GenSocketClient
   @reconnect_delay :timer.seconds(5)
@@ -119,13 +126,16 @@ defmodule Formular.Client.Adapter.Websocket do
   def handle_new_code_revision(name, code, config) do
     case Config.formula_config(config, name) do
       {nil, ^name, _} ->
-        true = Formular.Client.Cache.put(name, code)
+        true = Cache.put(name, code)
         :ok
 
       {mod, ^name, _} when is_atom(mod) ->
-        Formular.Client.Compiler.handle_new_code_revision(name, code, config)
-        true = Formular.Client.Cache.put(name, mod)
+        Compiler.handle_new_code_revision(name, code, config)
+        true = Cache.put(name, mod)
         :ok
+
+      nil ->
+        {:error, :formula_not_found}
     end
   end
 end

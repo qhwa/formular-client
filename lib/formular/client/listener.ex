@@ -1,4 +1,11 @@
 defmodule Formular.Client.Listener do
+  @moduledoc """
+  Formular client listening server.
+
+  This server read formulas from the server and watch the changes.
+  """
+
+  alias Formular.Client.Cache
   alias Formular.Client.Config
 
   use GenServer
@@ -19,7 +26,7 @@ defmodule Formular.Client.Listener do
     {:ok, _child} = start_adapter(config)
 
     # Attention here: we're blocking the starting process
-    # because we want to make sure other parts of the 
+    # because we want to make sure other parts of the
     # application can only be started AFTER all the formulas
     # has been loaded.
     wait_for_formulas(
@@ -57,25 +64,24 @@ defmodule Formular.Client.Listener do
     missing =
       formulas
       |> Stream.map(fn {_, name, _} -> name end)
-      |> Enum.reject(&Formular.Client.Cache.get(&1))
+      |> Enum.reject(&Cache.get(&1))
 
-    case missing do
-      [] ->
+    case {missing, config.read_timeout} do
+      {[], _} ->
         :ok
 
-      _ ->
-        case config.read_timeout do
-          :infinity ->
-            :ok
+      {_, :infinity} ->
+        :timer.sleep(200)
+        wait_for_formulas(start_at, config)
 
-          n when is_integer(n) ->
-            if div(:erlang.monotonic_time() - start_at, 1_000_000) > n do
-              raise "timeout reading formulas"
-            end
+      {_, n} when is_integer(n) ->
+        if timeout?(start_at, n), do: raise("timeout reading formulas")
 
-            :timer.sleep(200)
-            wait_for_formulas(start_at, config)
-        end
+        :timer.sleep(200)
+        wait_for_formulas(start_at, config)
     end
   end
+
+  defp timeout?(start_at, n),
+    do: :erlang.monotonic_time() - start_at > n * 1_000_000
 end

@@ -1,4 +1,7 @@
 defmodule Formular.Client.MockError do
+  @moduledoc """
+  Error for the mocking configuration.
+  """
   defexception [:message]
 
   @impl true
@@ -8,6 +11,22 @@ defmodule Formular.Client.MockError do
 end
 
 defmodule Formular.Client.Adapter.Mock do
+  @moduledoc """
+  A mocking adapter for testing.
+
+  An example configuration for this adapter:
+
+  ```elixir
+  {
+    formulas: [
+      {"my-formula", fn _binding, _opts ->
+        :ok
+      end}
+    ]
+  }
+  ```
+  """
+
   alias Formular.Client.Cache
 
   require Logger

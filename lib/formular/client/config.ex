@@ -1,4 +1,37 @@
 defmodule Formular.Client.Config do
+  @moduledoc """
+  Configuration for a Formular client.
+
+  The following keys are currently supported:
+
+  - `client_name`
+    - the identity of the client, can be any string. Default `nil`
+  - `url`
+    - the url of the remote server, default `nil`
+  - `read_timeout`
+    - a timeout setting for waiting for all the formulas
+  - `formulas`
+    - formula definition, check "Formula Configuration" section for more
+      information.
+  - `compiler`
+    - MFA config for compiling the string into Elixir code
+  - `adapter`
+    - an adapter for getting the data from the remote server
+
+  ## Formula Configuration
+
+  A fomular is configured as a three-element tuple:
+
+  ```elixir
+  {MyFm, "my-formula", My.ContextModule}
+  ```
+
+  Here `MyFm` is the name of module for the code to be compiled into;
+  `"my-formula"` is the name of the formula on the server;
+  `My.ContextModule` is the helper module that can be used in the 
+  code.
+  ```
+  """
   alias __MODULE__
 
   @type formula_name() :: String.t()
@@ -12,6 +45,7 @@ defmodule Formular.Client.Config do
   @type t :: %Config{
           client_name: String.t(),
           url: String.t(),
+          read_timeout: :infinity | non_neg_integer(),
           formulas: [formula_def()],
           compiler: {module(), atom(), args :: list()} | compile_function(),
           adapter: {module(), keyword()}
