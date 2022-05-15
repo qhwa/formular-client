@@ -19,9 +19,6 @@ defmodule Formular.Client.Compiler do
 
         %{compiler: f} when is_function(f, 1) ->
           apply(f, [{code, name, mod, context}])
-
-        _ ->
-          {:error, :nocompiler}
       end
     end
   end
