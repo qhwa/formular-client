@@ -85,7 +85,7 @@ The code is compiled and run under security constraints by [Formular](https://gi
 3. Use it in your code
 
     ```elixir
-    iex> Formular.Client.eval("my-formula-name", store: %{id: "foo"})
+    iex> Formular.Client.eval("my-formula-1", [])
     {:ok, false}
     ```
 
