@@ -36,17 +36,13 @@ defmodule Formular.Client.Adapter.Mock do
 
     {:ok, pid} = Agent.start_link(fn -> :ok end)
 
-    ensure_all_formulas_provided!(config.formulas, opts[:formulas])
+    formulas = opts[:formulas] || []
 
-    case opts[:formulas] do
-      formulas when is_list(formulas) ->
-        Enum.each(formulas, fn {name, function} ->
-          mock_global(name, function)
-        end)
+    ensure_all_formulas_provided!(config.formulas, formulas)
 
-      nil ->
-        :ok
-    end
+    Enum.each(formulas, fn {name, function} ->
+      mock_global(name, function)
+    end)
 
     {:ok, pid}
   end
