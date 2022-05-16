@@ -19,7 +19,8 @@ defmodule Formular.Client.MixProject do
         "coveralls.post": :test,
         "coveralls.github": :test,
         "coveralls.html": :test
-      ]
+      ],
+      elixirc_paths: elixirc_paths(Mix.env())
     ]
   end
 
@@ -41,7 +42,10 @@ defmodule Formular.Client.MixProject do
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.14.5", only: :test, runtime: false},
-      {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:phoenix, "~> 1.6", only: :test},
+      {:cowboy, "~> 2.0", only: :test},
+      {:plug_cowboy, "~> 2.0", only: :test}
     ]
   end
 
@@ -60,4 +64,7 @@ defmodule Formular.Client.MixProject do
       ]
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end
