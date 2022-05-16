@@ -54,7 +54,7 @@ defmodule Formular.Client.Config do
   defstruct [
     :client_name,
     :url,
-    :formulas,
+    formulas: [],
     read_timeout: :infinity,
     compiler: {Formular.Client.Compiler, :compile, []},
     adapter: {Formular.Client.Adapter.Websocket, []}
@@ -98,9 +98,5 @@ defmodule Formular.Client.Config do
       _ ->
         false
     end)
-  end
-
-  def formula_config(_, _name) do
-    nil
   end
 end

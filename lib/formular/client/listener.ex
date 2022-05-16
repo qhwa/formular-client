@@ -23,7 +23,14 @@ defmodule Formular.Client.Listener do
   def init(config) do
     Logger.info("Starting Formular Client.")
 
-    {:ok, _child} = start_adapter(config)
+    case start_adapter(config) do
+      {:ok, _child} ->
+        :ok
+
+      {:error, err} ->
+        Logger.error("Failed at starting the adapter. Error: #{inspect(err)}")
+        raise "starting adapter failed"
+    end
 
     # Attention here: we're blocking the starting process
     # because we want to make sure other parts of the
@@ -60,13 +67,13 @@ defmodule Formular.Client.Listener do
     end
   end
 
-  defp wait_for_formulas(start_at, %{formulas: formulas} = config) do
+  defp wait_for_formulas(start_at, %{formulas: formulas, read_timeout: timeout} = config) do
     missing =
       formulas
       |> Stream.map(fn {_, name, _} -> name end)
       |> Enum.reject(&Cache.get(&1))
 
-    case {missing, config.read_timeout} do
+    case {missing, timeout} do
       {[], _} ->
         :ok
 
