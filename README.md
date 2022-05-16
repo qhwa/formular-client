@@ -1,5 +1,11 @@
 # Formular.Client
 
+[![codecov](https://codecov.io/gh/qhwa/formular-client/branch/master/graph/badge.svg?token=ILRAXWMNU4)](https://codecov.io/gh/qhwa/formular-client)
+
+This package brings the ability to update the Elixir modules on the fly.
+
+The idea is to have the formular code hosted on a central server, and watch them. Formulas will be compiled into Elixir modules with the help of this package.
+
 ## Getting Start
 
 1. Install dependency
