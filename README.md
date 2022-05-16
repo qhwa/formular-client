@@ -4,7 +4,33 @@
 
 This package brings the ability to update the Elixir modules on the fly.
 
-The idea is to have the formular code hosted on a central server, and watch them. Formulas will be compiled into Elixir modules with the help of this package.
+The idea is to have the formular code hosted on a central server, and watch them. Formulas will be compiled into Elixir modules with the help of this package, as the following diagram depicts:
+
+```
+      Users
+        │
+        │uses
+        │
+        ▼
+
+      │my application                                      Formular Server
+┌─────┴──────────────────┐                          ┌──────────────────────────┐
+│                        │                          │                          │
+│ MyMod1    ┌──────────┐ │         watches          │   "my function code 1"   │
+│ MyMod2    │Formular  └─┼──────────────────────────►   "my function code 2"   │
+│ MyMod3◄───┤Client    ◄─┼──────────────────────────┐   "my function code 3"   │
+│ ...       └──────────┘ │                          │   ...                    │
+│                        │                          │                          │
+└────────────────────────┘                          └──────────▲───────────────┘
+                                                               │
+                                                               │ updates
+                                                               │
+                                                               │
+
+                                                           Developer
+```
+
+The code is compiled and run under security constraints by [Formular](https://github.com/qhwa/formular).
 
 ## Getting Start
 
