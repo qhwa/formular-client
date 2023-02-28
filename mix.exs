@@ -36,7 +36,7 @@ defmodule Formular.Client.MixProject do
   defp deps do
     [
       {:phoenix_gen_socket_client, "~> 4.0"},
-      {:websocket_client, "~> 1.4"},
+      {:websocket_client, "~> 1.5"},
       {:jason, "~> 1.2"},
       {:formular, "~> 0.3.1"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},

@@ -7,6 +7,7 @@ defmodule Formular.Client.Adapter.Websocket do
   alias Formular.Client.Cache
   alias Formular.Client.Compiler
   alias Formular.Client.Config
+  alias Formular.Client.PubSub
   alias Phoenix.Channels.GenSocketClient
 
   @behaviour GenSocketClient
@@ -61,10 +62,12 @@ defmodule Formular.Client.Adapter.Websocket do
   def handle_message(<<"formula:", name::binary>>, _, %{"code" => code}, _transport, state) do
     Logger.debug(["Received new code form #{name}: ", inspect(code)])
 
-    case handle_new_code_revision(name, code, state.config) do
-      :ok ->
-        {:ok, state}
+    old_code = current_code(name)
 
+    with :ok <- handle_new_code_revision(name, code, state.config),
+         :ok <- dispatch_code_change(name, old_code, code) do
+      {:ok, state}
+    else
       {:error, reason} ->
         {:stop, reason, state}
     end
@@ -123,6 +126,16 @@ defmodule Formular.Client.Adapter.Websocket do
     %{client_name: client_name}
   end
 
+  defp current_code(name) do
+    case Cache.get(name) do
+      {mod, code} when is_atom(mod) and is_binary(code) ->
+        code
+
+      other ->
+        other
+    end
+  end
+
   def handle_new_code_revision(name, code, config) do
     case Config.formula_config(config, name) do
       {nil, ^name, _} ->
@@ -131,11 +144,15 @@ defmodule Formular.Client.Adapter.Websocket do
 
       {mod, ^name, _} when is_atom(mod) ->
         Compiler.handle_new_code_revision(name, code, config)
-        true = Cache.put(name, mod)
+        true = Cache.put(name, {mod, code})
         :ok
 
       nil ->
         {:error, :formula_not_found}
     end
+  end
+
+  defp dispatch_code_change(name, old_code, new_code) do
+    PubSub.dispatch_code_change(name, old_code, new_code)
   end
 end

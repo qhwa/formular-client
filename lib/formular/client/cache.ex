@@ -6,12 +6,13 @@ defmodule Formular.Client.Cache do
   @ets_table :formular_client_cache
 
   def start_link(args) do
-    @ets_table = :ets.new(@ets_table, [:public, :set, :named_table, read_concurrency: true])
     GenServer.start_link(__MODULE__, args)
   end
 
   @impl true
   def init(_) do
+    @ets_table = :ets.new(@ets_table, [:public, :set, :named_table, read_concurrency: true])
+
     {:ok, nil}
   end
 

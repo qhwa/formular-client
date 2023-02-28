@@ -32,6 +32,9 @@ defmodule Formular.Client do
       mod when is_atom(mod) ->
         {:module, mod}
 
+      {mod, _code} when is_atom(mod) ->
+        {:module, mod}
+
       f when is_function(f, 2) ->
         {:function, f}
     end
