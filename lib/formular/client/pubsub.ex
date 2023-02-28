@@ -1,7 +1,5 @@
 defmodule Formular.Client.PubSub do
-  @name __MODULE__
   @scope :formular_pubsub
-
   @type formula_name :: String.t()
   @type code :: String.t()
   @type code_change_event ::
@@ -11,10 +9,7 @@ defmodule Formular.Client.PubSub do
   require Logger
 
   def start_link(args) do
-    case GenServer.start_link(__MODULE__, args, name: @name) do
-      {:ok, pid} ->
-        {:ok, pid}
-    end
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   @doc """
@@ -24,16 +19,16 @@ defmodule Formular.Client.PubSub do
   In such cases, it also needs to unsubscribe for the same amount of times
   to stop receiving messages.
   """
-  @spec subscribe(formula_name()) :: :ok
-  def subscribe(formula_name),
-    do: :pg.join(@scope, formula_name, self())
+  @spec subscribe(formula_name(), pid()) :: :ok
+  def subscribe(formula_name, pid \\ self()),
+    do: :pg.join(@scope, formula_name, pid)
 
   @doc """
   Stop receiving events from dispatcher.
   """
-  @spec unsubscribe(formula_name()) :: :ok
-  def unsubscribe(formula_name) do
-    :pg.leave(@scope, formula_name, self())
+  @spec unsubscribe(formula_name(), pid()) :: :ok
+  def unsubscribe(formula_name, pid \\ self()) do
+    :pg.leave(@scope, formula_name, pid)
   end
 
   @doc """
@@ -59,12 +54,11 @@ defmodule Formular.Client.PubSub do
       {:ok, _pid} ->
         {:ok, nil}
 
-      {:error, {:already_started, pid}} ->
-        Process.monitor(pid)
+      {:error, {:already_started, _pid}} ->
         {:ok, nil}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, _reason} = err ->
+        err
     end
   end
 end
