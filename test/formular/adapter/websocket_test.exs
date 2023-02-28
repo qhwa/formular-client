@@ -1,27 +1,24 @@
 defmodule Formular.Client.Adapter.WebsocketTest do
+  alias Formular.Client.Config
+
   use ExUnit.Case, async: false
-
-  alias TestSite.Endpoint
-
-  setup do
-    {:ok, port: :rand.uniform(10_000) + 10_000}
-  end
+  require Logger
 
   setup do
     {:ok,
-     formulas: [
-       "a",
-       "b",
-       {FooFm, "foo"}
-     ]}
+     config:
+       Config.new(
+         client_name: "websocket_test",
+         url: "ws://localhost:1500/socket/websocket",
+         formulas: [
+           "a",
+           "b",
+           {FooFm, "foo"}
+         ]
+       )}
   end
 
-  setup %{port: port} do
-    Endpoint.start_link(http: [port: port])
-    :ok
-  end
-
-  setup [:start_client]
+  setup [:subscribe, :start_client]
 
   describe "Fetch and compile" do
     test "connection success" do
@@ -42,7 +39,7 @@ defmodule Formular.Client.Adapter.WebsocketTest do
         {:update, formula}
       )
 
-      :timer.sleep(200)
+      assert_receive {:code_change, "b", _, "1000"}, 5_000
 
       assert Formular.Client.eval("b", []) == {:ok, 1000}
     end
@@ -59,19 +56,29 @@ defmodule Formular.Client.Adapter.WebsocketTest do
         {:update, formula}
       )
 
-      :timer.sleep(200)
+      assert_receive {:code_change, "foo", _, ":bar"}, 5_000
 
       assert Formular.Client.eval("foo", []) == {:ok, :bar}
     end
   end
 
-  defp start_client(%{port: port, formulas: formulas}) do
-    {:ok, _client} =
-      Formular.Client.Supervisor.start_link(
-        client_name: "websocket_test",
-        url: "ws://localhost:#{port}/socket/websocket",
-        formulas: formulas
-      )
+  defp start_client(%{config: config}) do
+    {:ok, _client} = Formular.Client.Supervisor.start_link(config)
+
+    :ok
+  end
+
+  defp subscribe(%{config: %{formulas: formulas}}) do
+    pid = self()
+
+    for {_, f, _} <- formulas,
+        do: :ok = Formular.Client.PubSub.subscribe(f)
+
+    on_exit(fn ->
+      for {_, f, _} <- formulas,
+          Process.alive?(pid),
+          do: :ok = Formular.Client.PubSub.unsubscribe(f, pid)
+    end)
 
     :ok
   end
