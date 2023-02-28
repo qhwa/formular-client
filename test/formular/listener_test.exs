@@ -8,13 +8,12 @@ defmodule ListenerTest.DelayedAdapter do
 
   @impl true
   def init({config, opts}) do
-    {:ok, config, {:continue, {:load_formula, opts[:delay]}}}
+    Process.send_after(self(), :load_formula, opts[:delay])
+    {:ok, config}
   end
 
   @impl true
-  def handle_continue({:load_formula, delay}, config) do
-    :timer.sleep(delay)
-
+  def handle_info(:load_formula, config) do
     for {_, name, _} <- config.formulas do
       Cache.put(name, echo(name))
     end

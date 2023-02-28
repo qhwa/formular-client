@@ -7,6 +7,7 @@ defmodule Formular.Client.Application do
     children = [
       Formular.Client.Compiler,
       Formular.Client.Cache,
+      Formular.Client.PubSub,
       {DynamicSupervisor, name: Formular.Client.Instances, strategy: :one_for_one}
     ]
 
