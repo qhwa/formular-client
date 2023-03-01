@@ -51,6 +51,15 @@ defmodule TestSite do
     end
 
     @impl true
+    def handle_in("code_updated", _payload, socket) do
+      {:noreply, socket}
+    end
+
+    def handle_in("code_update_error", _payload, socket) do
+      {:noreply, socket}
+    end
+
+    @impl true
     def handle_info(:after_join, socket) do
       push(socket, "data", socket.assigns.formula)
 
