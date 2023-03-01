@@ -38,7 +38,7 @@ defmodule Formular.Client.MixProject do
       {:phoenix_gen_socket_client, "~> 4.0"},
       {:websocket_client, "~> 1.5"},
       {:jason, "~> 1.2"},
-      {:formular, "~> 0.3.1"},
+      {:formular, "~> 0.3.2"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.14.5", only: :test, runtime: false},

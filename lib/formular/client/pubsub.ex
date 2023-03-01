@@ -2,8 +2,13 @@ defmodule Formular.Client.PubSub do
   @scope :formular_pubsub
   @type formula_name :: String.t()
   @type code :: String.t()
+  @type event :: code_change_event() | compiled_event() | compile_failed_event()
   @type code_change_event ::
           {:code_change, formula_name(), old_code :: code(), new_code :: code()}
+  @type compiled_event :: {:compiled, formula_name(), code(), compile_event_metadata()}
+  @type compile_failed_event ::
+          {:compile_failed, formula_name(), err :: any(), code(), compile_event_metadata()}
+  @type compile_event_metadata :: [{:mod, module()} | {:context, module()}]
 
   use GenServer
   require Logger
@@ -27,18 +32,26 @@ defmodule Formular.Client.PubSub do
   Stop receiving events from dispatcher.
   """
   @spec unsubscribe(formula_name(), pid()) :: :ok
-  def unsubscribe(formula_name, pid \\ self()) do
-    :pg.leave(@scope, formula_name, pid)
-  end
+  def unsubscribe(formula_name, pid \\ self()),
+    do: :pg.leave(@scope, formula_name, pid)
 
   @doc """
   Dispatch the event to all subscribers.
   """
-  @spec dispatch(event :: code_change_event()) :: :ok
-  def dispatch({:code_change, formula_name, _old_code, _new_code} = event) do
-    :pg.get_local_members(@scope, formula_name)
-    |> Enum.each(&send(&1, event))
-  end
+  @spec dispatch(event :: event()) :: :ok
+  def dispatch({:code_change, formula_name, _old_code, _new_code} = event),
+    do: do_dispatch(formula_name, event)
+
+  def dispatch({:compiled, formula_name, _code, _opts} = event),
+    do: do_dispatch(formula_name, event)
+
+  def dispatch({:compile_failed, formula_name, _err, _code, _opts} = event),
+    do: do_dispatch(formula_name, event)
+
+  defp do_dispatch(formula_name, event),
+    do:
+      :pg.get_local_members(@scope, formula_name)
+      |> Enum.each(&send(&1, event))
 
   @doc """
   Shortcut to `dispatch({:code_change, formula_name, old_code, new_code})`

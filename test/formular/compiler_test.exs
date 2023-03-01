@@ -17,19 +17,27 @@ defmodule Formular.Client.CompilerTest do
 
   describe "handle_new_code_revision/3" do
     test "it works", %{config: config} do
-      Compiler.handle_new_code_revision("discount", "0.5", config)
+      ref = make_ref()
+      Compiler.handle_new_code_revision({self(), ref}, "discount", "0.5", config)
 
+      assert_receive {^ref, :ok}
       assert DiscountFm.run([]) == 0.5
     end
 
     test "it works with custom function", %{config: config} do
+      parent = self()
+
       compiler = fn {code, name, module, context} ->
-        send(self(), {code, name, module, context})
+        send(parent, {code, name, module, context})
+        :ok
       end
 
-      config = %{config | compiler: compiler}
-      Compiler.handle_new_code_revision("discount", "0.9", config)
+      ref = make_ref()
 
+      config = %{config | compiler: compiler}
+      Compiler.handle_new_code_revision({self(), ref}, "discount", "0.9", config)
+
+      assert_receive {^ref, :ok}
       assert_receive {"0.9", "discount", DiscountFm, nil}
     end
   end

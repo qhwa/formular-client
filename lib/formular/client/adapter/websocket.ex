@@ -14,6 +14,7 @@ defmodule Formular.Client.Adapter.Websocket do
   @reconnect_delay :timer.seconds(5)
 
   require Logger
+  import GenSocketClient, only: [push: 4]
 
   def start_link(%Config{} = config, _options) do
     Logger.debug(["Starting new formula websocket client, ", inspect(config)])
@@ -59,17 +60,30 @@ defmodule Formular.Client.Adapter.Websocket do
   end
 
   @impl true
-  def handle_message(<<"formula:", name::binary>>, _, %{"code" => code}, _transport, state) do
+  def handle_message(<<"formula:", name::binary>> = topic, _, %{"code" => code}, transport, state) do
     Logger.debug(["Received new code form #{name}: ", inspect(code)])
 
     old_code = current_code(name)
 
     with :ok <- handle_new_code_revision(name, code, state.config),
-         :ok <- dispatch_code_change(name, old_code, code) do
+         :ok <- dispatch_code_change(name, old_code, code),
+         {:ok, _} <- push(transport, topic, "code_updated", %{}) do
       {:ok, state}
     else
-      {:error, reason} ->
-        {:stop, reason, state}
+      err ->
+        Logger.error("Error compiling code for #{name}, reason: #{inspect(err)}")
+
+        case try_report_err(transport, topic, err) do
+          {:ok, _} ->
+            {:ok, state}
+
+          {:error, reason} ->
+            Logger.error(
+              "Failed on reporting compilation error to server, error: #{inspect(reason)}."
+            )
+
+            {:stop, reason, state}
+        end
     end
   end
 
@@ -77,6 +91,19 @@ defmodule Formular.Client.Adapter.Websocket do
     Logger.warn("Unhandled message on topic #{topic}: #{event} #{inspect(payload)}")
     {:ok, state}
   end
+
+  defp try_report_err(transport, topic, {:error, %CompileError{description: reason}}) do
+    push(transport, topic, "code_update_error", %{reason: ["compile_error", reason]})
+  end
+
+  defp try_report_err(transport, topic, {:error, :unknown_compile_error}) do
+    push(transport, topic, "code_update_error", %{
+      reason: ["compile_error", "unknown_compile_error"]
+    })
+  end
+
+  defp try_report_err(_, _, err),
+    do: err
 
   @impl true
   def handle_joined(topic, _payload, _transport, state) do
@@ -143,9 +170,20 @@ defmodule Formular.Client.Adapter.Websocket do
         :ok
 
       {mod, ^name, _} when is_atom(mod) ->
-        Compiler.handle_new_code_revision(name, code, config)
-        true = Cache.put(name, {mod, code})
-        :ok
+        ref = make_ref()
+        :ok = Compiler.handle_new_code_revision({self(), ref}, name, code, config)
+
+        receive do
+          {^ref, :ok} ->
+            true = Cache.put(name, {mod, code})
+            :ok
+
+          {^ref, err} ->
+            err
+        after
+          5_000 ->
+            {:error, :unknown_compile_error}
+        end
 
       nil ->
         {:error, :formula_not_found}

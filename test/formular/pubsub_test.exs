@@ -13,7 +13,8 @@ defmodule Formular.Client.PubSubTest do
          url: "ws://localhost:1500/socket/websocket",
          formulas: [
            "a",
-           {@test_module, "test_module"}
+           {@test_module, "test_module"},
+           "unsubscribe"
          ]
        )}
   end
@@ -55,6 +56,24 @@ defmodule Formular.Client.PubSubTest do
     end
   end
 
+  describe "Unscribing" do
+    setup [:unsubscribe]
+
+    test "works" do
+      Phoenix.PubSub.broadcast(
+        TestSite.PubSub,
+        "formula:unsubscribe",
+        {:update,
+         %{
+           name: "unsubscribe",
+           code: "nil"
+         }}
+      )
+
+      refute_receive {:code_change, "unsubscribe", ~s("unsubscribe"), "nil"}, 5_000
+    end
+  end
+
   defp start_client(%{config: config}) do
     {:ok, _client} = Formular.Client.Supervisor.start_link(config)
 
@@ -63,6 +82,12 @@ defmodule Formular.Client.PubSubTest do
 
   defp subscribe(%{config: %{formulas: formulas}}) do
     for {_, name, _} <- formulas, do: PubSub.subscribe(name)
+
+    :ok
+  end
+
+  defp unsubscribe(%{config: %{formulas: formulas}}) do
+    for {_, name, _} <- formulas, do: PubSub.unsubscribe(name)
 
     :ok
   end

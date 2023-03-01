@@ -55,7 +55,7 @@ defmodule Formular.Client.Config do
     :client_name,
     :url,
     formulas: [],
-    read_timeout: :infinity,
+    read_timeout: 10_000,
     compiler: {Formular.Client.Compiler, :compile, []},
     adapter: {Formular.Client.Adapter.Websocket, []}
   ]
