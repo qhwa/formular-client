@@ -56,7 +56,7 @@ defmodule Formular.Client.PubSubTest do
     end
   end
 
-  describe "Unscribing" do
+  describe "Unsubscribing" do
     setup [:unsubscribe]
 
     test "works" do
@@ -81,13 +81,13 @@ defmodule Formular.Client.PubSubTest do
   end
 
   defp subscribe(%{config: %{formulas: formulas}}) do
-    for {_, name, _} <- formulas, do: PubSub.subscribe(name)
+    for {name, _} <- formulas, do: PubSub.subscribe(name)
 
     :ok
   end
 
   defp unsubscribe(%{config: %{formulas: formulas}}) do
-    for {_, name, _} <- formulas, do: PubSub.unsubscribe(name)
+    for {name, _} <- formulas, do: PubSub.unsubscribe(name)
 
     :ok
   end

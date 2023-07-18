@@ -14,14 +14,16 @@ defmodule Formular.Client.ConfigTest do
           formulas: [
             "test",
             {MyFm, "my-fm"},
-            {AnotherFm, "another-fm", MyHelper}
+            {AnotherFm, "another-fm", MyHelper},
+            {"third-fm", []}
           ]
         })
 
       assert config.formulas == [
-               {nil, "test", nil},
-               {MyFm, "my-fm", nil},
-               {AnotherFm, "another-fm", MyHelper}
+               {"test", []},
+               {"my-fm", compile_as: MyFm},
+               {"another-fm", compile_as: AnotherFm, context: MyHelper},
+               {"third-fm", []}
              ]
     end
   end
@@ -39,7 +41,7 @@ defmodule Formular.Client.ConfigTest do
     end
 
     test "it get the config if it exists", %{config: config} do
-      assert Config.formula_config(config, "foo") == {nil, "foo", nil}
+      assert Config.formula_config(config, "foo") == {"foo", []}
     end
 
     test "it returns nil when missing", %{config: config} do

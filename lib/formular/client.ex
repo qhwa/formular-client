@@ -16,15 +16,21 @@ defmodule Formular.Client do
       {:function, f} ->
         {:ok, f.(binding, options)}
 
-      other ->
-        other |> Formular.eval(binding, options)
+      {:code, code} ->
+        Formular.eval(code, binding, options)
+
+      {:module, mod} ->
+        Formular.eval({:module, mod}, binding, options)
     end
   end
 
   defp code_or_module!(name) do
     case Cache.get(name) do
+      {nil, code} when is_binary(code) ->
+        {:code, code}
+
       code when is_binary(code) ->
-        code
+        {:code, code}
 
       nil ->
         raise "Code has not been fetched"
@@ -32,7 +38,7 @@ defmodule Formular.Client do
       mod when is_atom(mod) ->
         {:module, mod}
 
-      {mod, _code} when is_atom(mod) ->
+      {mod, _code} when is_atom(mod) and not is_nil(mod) ->
         {:module, mod}
 
       f when is_function(f, 2) ->

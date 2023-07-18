@@ -48,7 +48,7 @@ defmodule Formular.Client.Listener do
     DynamicSupervisor.start_child(
       Formular.Client.Instances,
       %{
-        id: :erlang.unique_integer([:monotonic]),
+        id: :erlang.unique_integer(),
         start: adapter_start_tuple(config),
         restart: :permanent
       }
@@ -70,7 +70,7 @@ defmodule Formular.Client.Listener do
   defp wait_for_formulas(start_at, %{formulas: formulas, read_timeout: timeout} = config) do
     missing =
       formulas
-      |> Stream.map(fn {_, name, _} -> name end)
+      |> Stream.map(fn {name, _} -> name end)
       |> Enum.reject(&Cache.get(&1))
 
     case {missing, timeout} do

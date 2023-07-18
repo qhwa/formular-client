@@ -31,9 +31,7 @@ defmodule Formular.Client.MockAdapterTest do
 
     test "it raises error when missing", context do
       Process.flag(:trap_exit, true)
-      start_client(context)
-
-      assert_receive {:EXIT, _pid, {:shutdown, _}}
+      assert {:error, _} = start_client(context)
     end
   end
 

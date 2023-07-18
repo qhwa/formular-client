@@ -20,10 +20,10 @@ defmodule Formular.Client.Config do
 
   ## Formula Configuration
 
-  A fomular is configured as a three-element tuple:
+  A fomular is configured as a two-element tuple:
 
   ```elixir
-  {MyFm, "my-formula", My.ContextModule}
+  {"my-formula", compile_as: MyFm, context: My.ContextModule}
   ```
 
   Here `MyFm` is the name of module for the code to be compiled into;
@@ -31,12 +31,32 @@ defmodule Formular.Client.Config do
   `My.ContextModule` is the helper module that can be used in the 
   code.
   ```
+
+  A single formula name string is also accepted:
+
+  ```elixir
+  [
+    ...
+    formulas: ["my-formula"]
+  ]
+  ```
+
+  In this case, `compile_as` and `context` are optional and treated as
+  `nil`s.
   """
   alias __MODULE__
 
+  require Logger
+
   @type formula_name() :: String.t()
-  @type formula_def :: {module(), formula_name(), context :: module()}
-  @type formula_full_def :: formula_def() | {module(), name :: String.t()}
+  @type formula_def() :: {formula_name(), compile_options()}
+  @type compile_options() :: [compile_option()]
+  @type compile_option() ::
+          {:compile_as, module()} | {:context, module()} | {:allow_modules, [module()]}
+  @type formula_full_def() ::
+          formula_def()
+          | {module(), name :: String.t(), module() | nil}
+          | {module(), name :: String.t()}
 
   @type compile_function ::
           ({name :: String.t(), code :: binary(), module(), nil | module()} ->
@@ -75,13 +95,24 @@ defmodule Formular.Client.Config do
       :formulas,
       &Enum.map(&1 || [], fn
         name when is_binary(name) ->
-          {nil, name, nil}
+          {name, []}
 
-        {_, _, _} = f ->
-          f
+        {mod, name} when is_atom(mod) and is_binary(name) ->
+          Logger.warning(
+            "This format ({module, formula_name}) of formula Configuration is deprecated, please use `{formula_name, compile_as: module}` format."
+          )
 
-        {mod, name} ->
-          {mod, name, nil}
+          {name, compile_as: mod}
+
+        {name, opts} when is_binary(name) and is_list(opts) ->
+          {name, opts}
+
+        {mod, name, context} when is_atom(mod) and is_binary(name) and is_atom(context) ->
+          Logger.warning(
+            "This format ({module, formula_name, context}) of formula Configuration is deprecated, please use `{formula_name, compile_as: module, context: context}` format."
+          )
+
+          {name, compile_as: mod, context: context}
       end)
     )
   end
@@ -92,7 +123,7 @@ defmodule Formular.Client.Config do
   @spec formula_config(t(), formula_name()) :: formula_def() | nil
   def formula_config(%Config{formulas: formulas}, name) when is_list(formulas) do
     Enum.find(formulas, fn
-      {_mod, ^name, _context} ->
+      {^name, _opts} ->
         true
 
       _ ->

@@ -71,11 +71,11 @@ defmodule Formular.Client.Adapter.WebsocketTest do
   defp subscribe(%{config: %{formulas: formulas}}) do
     pid = self()
 
-    for {_, f, _} <- formulas,
+    for {f, _} <- formulas,
         do: :ok = Formular.Client.PubSub.subscribe(f)
 
     on_exit(fn ->
-      for {_, f, _} <- formulas,
+      for {f, _} <- formulas,
           Process.alive?(pid),
           do: :ok = Formular.Client.PubSub.unsubscribe(f, pid)
     end)

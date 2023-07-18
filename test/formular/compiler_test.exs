@@ -5,40 +5,42 @@ defmodule Formular.Client.CompilerTest do
   use ExUnit.Case, async: true
 
   setup do
+    opts = [compile_as: DiscountFm]
+
     config =
       Config.new(%{
         formulas: [
-          {DiscountFm, "discount"}
+          {"discount", opts}
         ]
       })
 
-    {:ok, config: config}
+    {:ok, config: config, opts: opts}
   end
 
   describe "handle_new_code_revision/3" do
-    test "it works", %{config: config} do
+    test "it works", %{config: config, opts: opts} do
       ref = make_ref()
-      Compiler.handle_new_code_revision({self(), ref}, "discount", "0.5", config)
+      Compiler.handle_new_code_revision({self(), ref}, "discount", "0.5", config, opts)
 
       assert_receive {^ref, :ok}
-      assert DiscountFm.run([]) == 0.5
+      assert apply(DiscountFm, :run, [[]]) == 0.5
     end
 
-    test "it works with custom function", %{config: config} do
+    test "it works with custom function", %{config: config, opts: opts} do
       parent = self()
 
-      compiler = fn {code, name, module, context} ->
-        send(parent, {code, name, module, context})
+      compiler = fn {code, name, opts} ->
+        send(parent, {code, name, opts})
         :ok
       end
 
       ref = make_ref()
 
       config = %{config | compiler: compiler}
-      Compiler.handle_new_code_revision({self(), ref}, "discount", "0.9", config)
+      Compiler.handle_new_code_revision({self(), ref}, "discount", "0.9", config, opts)
 
       assert_receive {^ref, :ok}
-      assert_receive {"0.9", "discount", DiscountFm, nil}
+      assert_receive {"0.9", "discount", ^opts}
     end
   end
 end
