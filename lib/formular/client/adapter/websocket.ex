@@ -41,7 +41,7 @@ defmodule Formular.Client.Adapter.Websocket do
         subscribe(formulas, transport, state)
 
       [] ->
-        Logger.warn("Empty formula list.")
+        Logger.warning("Empty formula list.")
         {:stop, :normal, state}
     end
   end
@@ -55,7 +55,7 @@ defmodule Formular.Client.Adapter.Websocket do
 
   @impl true
   def handle_reply(topic, _ref, payload, _transport, state) do
-    Logger.warn("reply on topic #{topic}: #{inspect(payload)}")
+    Logger.warning("reply on topic #{topic}: #{inspect(payload)}")
     {:ok, state}
   end
 
@@ -88,7 +88,7 @@ defmodule Formular.Client.Adapter.Websocket do
   end
 
   def handle_message(topic, event, payload, _transport, state) do
-    Logger.warn("Unhandled message on topic #{topic}: #{event} #{inspect(payload)}")
+    Logger.warning("Unhandled message on topic #{topic}: #{event} #{inspect(payload)}")
     {:ok, state}
   end
 
@@ -131,11 +131,11 @@ defmodule Formular.Client.Adapter.Websocket do
 
   @impl true
   def handle_call(message, _from, _transport, state) do
-    Logger.warn("Did not expect to receive call with message: #{inspect(message)}")
+    Logger.warning("Did not expect to receive call with message: #{inspect(message)}")
     {:reply, {:error, :unexpected_message}, state}
   end
 
-  defp subscribe([{_mod, name, _context} | rest], transport, state) do
+  defp subscribe([{name, _opts} | rest], transport, state) do
     topic = formula_topic(name)
     {:ok, _ref} = GenSocketClient.join(transport, topic, join_payload(state.config))
     subscribe(rest, transport, state)
@@ -165,13 +165,19 @@ defmodule Formular.Client.Adapter.Websocket do
 
   def handle_new_code_revision(name, code, config) do
     case Config.formula_config(config, name) do
-      {nil, ^name, _} ->
-        true = Cache.put(name, code)
-        :ok
+      {^name, opts} ->
+        maybe_compile(name, code, config, opts)
 
-      {mod, ^name, _} when is_atom(mod) ->
+      nil ->
+        {:error, :formula_not_found}
+    end
+  end
+
+  defp maybe_compile(name, code, config, opts) do
+    case Keyword.get(opts, :compile_as) do
+      mod when is_atom(mod) ->
         ref = make_ref()
-        :ok = Compiler.handle_new_code_revision({self(), ref}, name, code, config)
+        :ok = Compiler.handle_new_code_revision({self(), ref}, name, code, config, opts)
 
         receive do
           {^ref, :ok} ->
@@ -186,7 +192,8 @@ defmodule Formular.Client.Adapter.Websocket do
         end
 
       nil ->
-        {:error, :formula_not_found}
+        true = Cache.put(name, code)
+        :ok
     end
   end
 

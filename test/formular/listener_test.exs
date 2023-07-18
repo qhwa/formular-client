@@ -14,7 +14,7 @@ defmodule ListenerTest.DelayedAdapter do
 
   @impl true
   def handle_info(:load_formula, config) do
-    for {_, name, _} <- config.formulas do
+    for {name, _} <- config.formulas do
       Cache.put(name, echo(name))
     end
 
@@ -67,8 +67,6 @@ defmodule Formular.Client.ListenerTest do
       Process.flag(:trap_exit, true)
 
       assert {:error, _} = start_client(context)
-
-      assert_receive {:EXIT, _pid, _}, 1_000
     end
   end
 

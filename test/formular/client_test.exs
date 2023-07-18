@@ -43,9 +43,8 @@ defmodule Formular.ClientTest do
     test "it raises an error." do
       Process.flag(:trap_exit, true)
 
-      Formular.Client.Supervisor.start_link(adapter: {"some invalid config", "test"})
-
-      assert_receive {:EXIT, _pid, _error}
+      assert {:error, _} =
+               Formular.Client.Supervisor.start_link(adapter: {"some invalid config", "test"})
     end
   end
 
