@@ -5,8 +5,10 @@ defmodule Formular.Client.MockError do
   defexception [:message]
 
   @impl true
-  def exception({:missing, _missing_formulas}) do
-    %Formular.Client.MockError{message: "Not all the formulas were mocked"}
+  def exception({:missing, missing}) do
+    %Formular.Client.MockError{
+      message: "Not all the formulas are mocked, missing: #{inspect(missing)}"
+    }
   end
 end
 
@@ -64,7 +66,7 @@ defmodule Formular.Client.Adapter.Mock do
   end
 
   defp ensure_all_formulas_provided(required, provided) do
-    required = required |> Enum.map(&elem(&1, 1))
+    required = required |> Enum.map(&elem(&1, 0))
     provided = provided |> Enum.map(&elem(&1, 0))
 
     case required -- provided do
