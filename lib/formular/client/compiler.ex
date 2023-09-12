@@ -7,26 +7,54 @@ defmodule Formular.Client.Compiler do
 
   alias Formular.Client.PubSub
 
-  use Agent
+  use GenServer
   require Logger
 
-  def start_link(opts),
-    do: Agent.start_link(fn -> nil end, Keyword.put_new(opts, :name, __MODULE__))
+  @reg Formular.Client.Compiler.Registry
+  @compile_timeout :timer.minutes(1)
+  @idle_timeout :timer.minutes(1)
 
   def handle_new_code_revision({pid, ref}, name, code, config, opts) do
-    Agent.update(__MODULE__, fn _ ->
-      case config do
-        %{compiler: {m, f, a}} ->
-          apply(m, f, [{code, name, opts} | a])
-          |> report_result({pid, ref}, {name, opts}, code)
+    {:ok, server} = try_start(name)
 
-        %{compiler: f} when is_function(f, 1) ->
-          apply(f, [{code, name, opts}])
-          |> report_result({pid, ref}, {name, opts}, code)
-      end
+    GenServer.call(server, {:compile, {pid, ref, code, config, opts}}, @compile_timeout)
 
-      nil
-    end)
+    :ok
+  end
+
+  defp try_start(name) do
+    case GenServer.start_link(__MODULE__, name, name: via_tuple(name)) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
+    end
+  end
+
+  defp via_tuple(name),
+    do: {:via, Registry, {@reg, name}}
+
+  @impl true
+  def init(name) do
+    {:ok, name}
+  end
+
+  @impl true
+  def handle_call({:compile, {pid, ref, code, config, opts}}, _from, name) do
+    case config do
+      %{compiler: {m, f, a}} ->
+        apply(m, f, [{code, name, opts} | a])
+        |> report_result({pid, ref}, {name, opts}, code)
+
+      %{compiler: f} when is_function(f, 1) ->
+        apply(f, [{code, name, opts}])
+        |> report_result({pid, ref}, {name, opts}, code)
+    end
+
+    {:reply, :ok, name, @idle_timeout}
+  end
+
+  @impl true
+  def handle_info(:timeout, name) do
+    {:stop, :normal, name}
   end
 
   def compile({code, name, opts}) do

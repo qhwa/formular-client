@@ -37,10 +37,10 @@ defmodule Formular.Client.CompilerTest do
       ref = make_ref()
 
       config = %{config | compiler: compiler}
-      Compiler.handle_new_code_revision({self(), ref}, "discount", "0.9", config, opts)
+      Compiler.handle_new_code_revision({parent, ref}, "discount", "0.9", config, opts)
 
-      assert_receive {^ref, :ok}
-      assert_receive {"0.9", "discount", ^opts}
+      assert_receive {^ref, :ok}, 1_000
+      assert_receive {"0.9", "discount", ^opts}, 1_000
     end
   end
 end
