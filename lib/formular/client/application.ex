@@ -5,7 +5,7 @@ defmodule Formular.Client.Application do
 
   def start(_type, _args) do
     children = [
-      Formular.Client.Compiler,
+      Formular.Client.Compiler.Supervisor,
       Formular.Client.Cache,
       Formular.Client.PubSub,
       {DynamicSupervisor, name: Formular.Client.Instances, strategy: :one_for_one}
