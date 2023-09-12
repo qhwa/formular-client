@@ -6,7 +6,7 @@ defmodule Formular.Client.MixProject do
       app: :formular_client,
       description:
         "Watch and fetch application's configuration from a server, and compile them into Elixir modules.",
-      version: "0.4.0-alpha.2",
+      version: "0.4.0-alpha.3",
       elixir: ">= 1.10.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
