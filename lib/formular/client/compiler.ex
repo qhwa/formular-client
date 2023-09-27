@@ -17,7 +17,8 @@ defmodule Formular.Client.Compiler do
   def handle_new_code_revision({pid, ref}, name, code, config, opts) do
     {:ok, server} = try_start(name)
 
-    GenServer.call(server, {:compile, {pid, ref, code, config, opts}}, @compile_timeout)
+    timeout = Map.get(config, :read_timeout, @compile_timeout)
+    GenServer.call(server, {:compile, {pid, ref, code, config, opts}}, timeout)
 
     :ok
   end
