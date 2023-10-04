@@ -48,7 +48,13 @@ defmodule Formular.Client.Adapter.Websocket do
 
   @impl true
   def handle_disconnected(reason, state) do
-    Logger.error(["Formular client disconnected, reason: ", inspect(reason)])
+    Logger.error([
+      "Formular client disconnected, reason: ",
+      inspect(reason),
+      ", url: ",
+      state.config.url
+    ])
+
     :timer.sleep(@reconnect_delay)
     {:connect, state}
   end
